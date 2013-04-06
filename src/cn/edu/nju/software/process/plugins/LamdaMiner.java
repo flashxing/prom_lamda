@@ -72,8 +72,10 @@ public class LamdaMiner implements NodeExpander<Tuple>{
         this.relation = log.getRelation();
         this.relation.calRelation();
         //eventlist has all the event id。
-        this.eventlist = new ArrayList<Integer>(log.getTaskNum());
-        
+        this.eventlist = new ArrayList<Integer>();
+        for(int i = 0; i < log.getTaskNum(); ++i){
+        	this.eventlist.add(i);
+        }
         final Progress progress = context.getProgress();
 		progress.setMinimum(0);
 		progress.setMaximum(5);
@@ -87,7 +89,9 @@ public class LamdaMiner implements NodeExpander<Tuple>{
 				context.getFutureResult(0).cancel(true);
 				return null;
 			}
+			System.out.print("causal is:"+causal);
 			if (!eventlist.contains(causal.getFirst()) || !eventlist.contains(causal.getSecond())) {
+				System.out.println("continue");
 				continue;
 			}
 			Tuple tuple = new Tuple();
@@ -97,6 +101,7 @@ public class LamdaMiner implements NodeExpander<Tuple>{
 			tuple.maxLeftIndex = eventlist.indexOf(causal.getFirst());
 			stack.push(tuple);
 		}
+		System.out.println(stack);
 		progress.inc();
 		
 		// Expand the tuples
@@ -117,21 +122,27 @@ public class LamdaMiner implements NodeExpander<Tuple>{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		System.out.println(result);
 		if (progress.isCancelled()) {
 			context.getFutureResult(0).cancel(true);
 			return null;
 		}
-		
+//		//find the implict dependency
+//		Iterator<Tuple> iter = result.iterator();
+//		while(iter.hasNext()){
+//			Tuple tupe = iter.next();
+//			
+//		}
 		// Add transitions 
-		Map<String, Transition> class2transition = new HashMap<String, Transition>();
+		Map<Integer, Transition> class2transition = new HashMap<Integer, Transition>();
 		Petrinet net = PetrinetFactory.newPetrinet("Petrinet from Eventlog, mined with LamdaMiner");
-		context.getFutureResult(0).setLabel(net.getLabel());
-		context.getFutureResult(1).setLabel("Initial Marking of " + net.getLabel());
+//		context.getFutureResult(0).setLabel(net.getLabel());
+//		context.getFutureResult(1).setLabel("Initial Marking of " + net.getLabel());
 		for (String eventname : log.getNameIdMap().keySet()) {
 			Transition transition = net.addTransition(eventname);
-			class2transition.put(eventname, transition);
+			class2transition.put(log.getNameIdMap().get(eventname), transition);
 		}
+		System.out.println(class2transition);
 		progress.inc();
 		
 		int placeNum = 0;
@@ -154,59 +165,18 @@ public class LamdaMiner implements NodeExpander<Tuple>{
 		Place pstart = net.addPlace("Start");
 		for (int eventId : relation.getStartTraceInfo().keySet()) {
 			String eventClass = log.getTasklist().get(eventId);
-			net.addArc(pstart, class2transition.get(eventClass));
+			net.addArc(pstart, class2transition.get(eventId));
 		}
 		m.add(pstart);
 
 		Place pend = net.addPlace("End");
 		for (int eventId : relation.getEndTraceInfo().keySet()) {
 			String eventClass = log.getTasklist().get(eventId);
-			net.addArc(class2transition.get(eventClass), pend);
+			net.addArc(class2transition.get(eventId), pend);
 		}
 		progress.inc();
 	
 		return net;
-//    	int placeNum = 0;
-//    	WFMultiset[] ms=multisetList.getMs();
-//    	WFMining wfm = new WFMining();
-//		wfm.mine(ms);
-//		//生成起始活动和结束活动
-//		Integer[] tis = wfm.Ti;
-//		Integer[] tos = wfm.To;
-//		//活动集，库所
-//		String[] activitys = wfm.Tw;
-//		WFPair[] pairs = wfm.Yw;
-//		Petrinet resultNet = PetrinetFactory.newPetrinet("Output Petrinet");
-//		List<Transition> transitions = new ArrayList<Transition>();
-//		transitions.add(null);
-//		for( int i = 1; i < activitys.length; i++ ){
-//			Transition transition =resultNet.addTransition(activitys[i]);
-//			transitions.add(transition);
-//		}
-//		//生成起始库所
-//		for( int i = 0; i < tis.length; i++ ){
-//			int index = tis[i];
-//			Place place = resultNet.addPlace("p"+placeNum++);
-//			resultNet.addArc( place,  transitions.get(index));
-//		}
-//		//连接库所left和right的变迁
-//		for( int i = 0; i < pairs.length; i++ ){
-//			Place place = resultNet.addPlace("p"+placeNum++);
-//			WFPair tuple = pairs[i];
-//			for( Integer leftIndex : tuple.left ){
-//				resultNet.addArc( transitions.get(leftIndex), place);
-//			}
-//			for( Integer rightIndex : tuple.right ){
-//				resultNet.addArc( place,  transitions.get(rightIndex));
-//			}
-//		}
-//		//添加结束库所
-//		for( int i = 0; i < tos.length; i++ ){
-//			int index = tos[i];
-//			Place place = resultNet.addPlace("p"+placeNum++);
-//			resultNet.addArc( transitions.get(index), place );
-//		}
-//		return net;
     }
 
 	/* (non-Javadoc)
@@ -246,6 +216,14 @@ public class LamdaMiner implements NodeExpander<Tuple>{
 			int toAdd = eventlist.get(i);
 
 			if (canExpandRight(toExpand, toAdd)) {
+				//find the implicit dependency
+				if (hasImplicitDependency(toExpand, toAdd)){
+					Tuple newTuple =new Tuple();
+					newTuple.rightPart.add(toAdd);
+					newTuple.leftPart.addAll(toExpand.rightPart);
+					newTuple.maxLeftIndex = toExpand.maxRightIndex;
+					newTuple.maxRightIndex = i;
+				}
 				// Ok, it is safe to add toAdd
 				// to the right part of the tuple
 				Tuple newTuple = toExpand.clone();
@@ -257,6 +235,25 @@ public class LamdaMiner implements NodeExpander<Tuple>{
 		}
 
 		return tuples;
+	}
+
+	/**
+	 * @author=xlx09
+	 * @param toExpand
+	 * @param toAdd
+	 * @return
+	 * @return_typ boolean
+	 * @throws 
+	 * @version 1.0.0
+	 */
+	private boolean hasImplicitDependency(Tuple toExpand, int toAdd) {
+		// TODO Auto-generated method stub
+		for(int right:toExpand.leftPart){
+			if (!(relation.getCausalDependencies().get(new EventPair<Integer,Integer>(right, toAdd)) ==1)){
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/* (non-Javadoc)

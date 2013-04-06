@@ -7,6 +7,7 @@ package cn.edu.nju.software.Models;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 /**
@@ -18,6 +19,8 @@ import java.util.Map;
 public class EventLogRelation {
     
     private EventLog log;
+
+
 	/**
      * to save the relation of a=>wb and a/->wb
      * the 0 represent false;
@@ -56,9 +59,45 @@ public class EventLogRelation {
     	calNextTaskMap();
     	calDependencies();
     	calStartAndEndTrace();
+    	calParallelRelations();
     }
     
     /**
+	 * @author=xlx09
+	 * @return_typ void
+	 * @throws 
+	 * @version 1.0.0
+	 */
+	private void calParallelRelations() {
+		// TODO Auto-generated method stub
+		for(int i = 0; i < log.getTaskNum(); ++i){
+			for(int j = 0; j < log.getTaskNum(); ++j){
+				if (i != j){
+				for(HashSet<Integer> set:log.getPostTaskMap().values()){
+					if (set.contains(i) && set.contains(j)){
+						boolean parallel = true;
+						for(HashSet<Integer> other:log.getPostTaskMap().values()){
+							if (!(other.contains(i))&&(other.contains(j))){
+								parallel = false;
+								break;
+							}
+						}
+						if (parallel){
+							this.parallelRelations.put(new EventPair<Integer, Integer>(i,j), 2);
+						}
+					}
+				}
+				if((this.nextTaskMap.keySet().contains(new EventPair<Integer,Integer>(i,j)))
+					&&(this.nextTaskMap.keySet().contains(new EventPair<Integer,Integer>(j,i)))
+					&&(!this.causalDependencies.keySet().contains(new EventPair<Integer,Integer>(i,j)))){	
+					this.parallelRelations.put(new EventPair<Integer, Integer>(i,j), 1);
+				}
+				}
+			}
+		}
+	}
+
+	/**
 	 * @author=xlx09
 	 * @return_typ void
 	 * @throws 
@@ -179,4 +218,11 @@ public class EventLogRelation {
 		this.endTraceInfo = endTraceInfo;
 	}
 
+	public EventLog getLog() {
+		return log;
+	}
+
+	public void setLog(EventLog log) {
+		this.log = log;
+	}
 }

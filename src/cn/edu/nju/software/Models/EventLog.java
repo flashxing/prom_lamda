@@ -38,14 +38,7 @@ public class EventLog {
  //   private Map<EventPair<Integer, Integer>, Integer> causalDependencies = new HashMap<EventPair<Integer, Integer>,Integer>();
 	
     private int taskNum;
-	public int getTaskNum() {
-		return taskNum;
-	}
 
-
-	public void setTaskNum(int taskNum) {
-		this.taskNum = taskNum;
-	}
 
 	/**
      * to save the taskid->taskname
@@ -55,6 +48,7 @@ public class EventLog {
 
 	public EventLogRelation getRelation(){
         EventLogRelation relation = new EventLogRelation();
+        relation.setLog(this);
 //        relation.setCausalDependencies(this.getCausalDependencies());
         relation.setDependency(this.calDependency());
         relation.setParallelism(this.calParallelism());
@@ -77,6 +71,7 @@ public class EventLog {
             while ((line = br.readLine()) != null){
                 String[] tasks = line.split("\t");
                 if (tasks.length != LamdaDefine.EACHLOGLENGTH){
+                	System.out.println("This "+line+" is invalid");
                     Log.warn("This "+line+" is invalid");
                     continue;
                 }
@@ -90,10 +85,15 @@ public class EventLog {
                 if (!this.eventlist.containsKey(caseId)){
                 	eventlist.put(caseId, new ArrayList<Integer>());
                 }
-                eventlist.get(caseId).add(tasklist.size()-1);
+                eventlist.get(caseId).add(nameIdMap.get(tasks[LamdaDefine.FIRSTTASKINDEX]));
                 
                 String[] postTasks = tasks[LamdaDefine.POSTTASKINDEX].split(",");
-                HashSet<Integer> postTaskSet = new HashSet<Integer>();
+                HashSet<Integer> postTaskSet;
+                if (postTaskMap.containsKey(nameIdMap.get(tasks[LamdaDefine.FIRSTTASKINDEX]))){
+                	postTaskSet = postTaskMap.get(nameIdMap.get(tasks[LamdaDefine.FIRSTTASKINDEX]));
+                }else{
+                	postTaskSet = new HashSet<Integer>();
+                }
                 for(int i = 0; i < postTasks.length; i++){
                     if (!nameIdMap.keySet().contains(postTasks[i])){
                         nameIdMap.put(postTasks[i], tasklist.size());
@@ -160,7 +160,7 @@ public class EventLog {
         int[][] dependency = new int[LamdaDefine.MAXTASKNUM][LamdaDefine.MAXTASKNUM];
         for(int i = 0; i < taskNum; i++){
             for(int j = 0; j < taskNum; j++){
-                if (postTaskMap.get(i).contains(j)){
+                if ((postTaskMap.get(i) != null)&&(postTaskMap.get(i).contains(j))){
                     dependency[i][j] = 1;
                 }
             }
@@ -181,6 +181,15 @@ public class EventLog {
 
 	public void setEventlist(Map<Integer, ArrayList<Integer>> eventlist) {
 		this.eventlist = eventlist;
+	}
+	
+	public int getTaskNum() {
+		return taskNum;
+	}
+
+
+	public void setTaskNum(int taskNum) {
+		this.taskNum = taskNum;
 	}
     
 //    public Set<EventPair<Integer, Integer>> getCausalDependencies() {
