@@ -54,10 +54,10 @@
 	<classpathentry kind="lib" path="lib/jdom-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/openide-lookup-1.9-patched-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/junit-4.8.1.jar"/>
-	<classpathentry kind="lib" path="E:/workspace/ProM/lib/ProM-Models.jar"/>
-	<classpathentry kind="lib" path="E:/workspace/ProM/packagelib/PetriNets.jar"/>
-	<classpathentry kind="lib" path="E:/workspace/ProM/packagelib/LogAbstractions.jar"/>
-	<classpathentry kind="lib" path="E:/workspace/ProM/packagelib/Log.jar"/>
-	<classpathentry kind="lib" path="E:/workspace/ProM/packagelib/PetriNets-lib/exp4j-0.3.8.jar"/>
+	<classpathentry kind="lib" path="lib/ProM-Models.jar"/>
+	<classpathentry kind="lib" path="packagelib/PetriNets.jar"/>
+	<classpathentry kind="lib" path="packagelib/Log.jar"/>
+	<classpathentry kind="lib" path="packagelib/LogAbstractions.jar"/>
+	<classpathentry kind="lib" path="packagelib/PetriNets-lib/exp4j-0.3.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

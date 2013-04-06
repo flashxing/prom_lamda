@@ -14,11 +14,11 @@ import java.util.Set;
  * @Version 1.0.0
  * @Date 2013-3-21
  */
-public class Tuple<E> {
+public class Tuple {
 
-	public Set<E> leftPart = new HashSet<E>();
+	public Set<Integer> leftPart = new HashSet();
 
-	public Set<E> rightPart = new HashSet<E>();
+	public Set<Integer> rightPart = new HashSet();
 
 	public int maxRightIndex = 0;
 	public int maxLeftIndex = 0;

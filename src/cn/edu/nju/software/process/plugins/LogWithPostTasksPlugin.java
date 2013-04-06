@@ -13,6 +13,8 @@ import org.processmining.framework.abstractplugins.AbstractImportPlugin;
 import org.processmining.framework.plugin.PluginContext;
 import org.processmining.framework.plugin.annotations.Plugin;
 
+import cn.edu.nju.software.Models.EventLog;
+
 
 /**
  * @Author xlx09
@@ -23,16 +25,16 @@ import org.processmining.framework.plugin.annotations.Plugin;
 @Plugin(
 		name = "Import EventLogWithPostTasks", 
 		parameterLabels = { "Filename" }, 
-		returnLabels = { "WFMatrix" }, 
-		returnTypes = { MultisetList.class }
+		returnLabels = { "EventLog" }, 
+		returnTypes = { EventLog.class }
 )
 /**
  * the Import Plugin
  * need the input file be *.mul
  */
 @UIImportPlugin(
-		description = "Mul",
-		extensions = { "mul" }
+		description = "eventlog",
+		extensions = { "eventlog" }
 )
 public class LogWithPostTasksPlugin extends AbstractImportPlugin {
 			
@@ -40,14 +42,15 @@ public class LogWithPostTasksPlugin extends AbstractImportPlugin {
 	 * @see org.processmining.framework.abstractplugins.AbstractImportPlugin#importFromStream(org.processmining.framework.plugin.PluginContext, java.io.InputStream, java.lang.String, long)
 	 */
 	@Override
-	protected MultisetList  importFromStream(
+	protected EventLog  importFromStream(
 			final PluginContext context,final InputStream input, final String filename,
 			final long fileSizeInBytes) {
 		try {
-			context.getFutureResult(0).setLabel("MultisetList imported from " + filename);
-            MultisetList mulList=new MultisetList(input);
+			context.getFutureResult(0).setLabel("EventLog imported from " + filename);
+            EventLog eventLog=new EventLog();
+            eventLog.loadFromInputString(input);
 	        Log.debug("Get LogWithPostTasks Successfull"); 
-			return mulList;
+			return eventLog;
 		} catch (Exception e) {
 			/**
 			 * Failed to get LogWithPostTasks

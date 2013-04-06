@@ -13,5 +13,8 @@ package cn.edu.nju.software.Models;
  */
 public interface LamdaDefine {
 	public static final int MAXTASKNUM = 1001;
-	public static final int EACHLOGLENGTH = 1;
+	public static final int EACHLOGLENGTH = 3;
+	public static final int IDINDEX = 1;
+	public static final int FIRSTTASKINDEX = 2;
+	public static final int POSTTASKINDEX = 3;
 }

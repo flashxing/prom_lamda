@@ -27,12 +27,25 @@ public class EventLog {
      * to save the taskname->taskid
      */
     private Map<String, Integer> nameIdMap = new HashMap<String, Integer>();
+    private Map<Integer,ArrayList<Integer>> eventlist = new HashMap<Integer, ArrayList<Integer>>();
+
 
 	/**
      * to save the post tasks set of each task
      */
     private Map<Integer, HashSet<Integer> > postTaskMap = new HashMap<Integer, HashSet<Integer> >();
 
+ //   private Map<EventPair<Integer, Integer>, Integer> causalDependencies = new HashMap<EventPair<Integer, Integer>,Integer>();
+	
+    private int taskNum;
+	public int getTaskNum() {
+		return taskNum;
+	}
+
+
+	public void setTaskNum(int taskNum) {
+		this.taskNum = taskNum;
+	}
 
 	/**
      * to save the taskid->taskname
@@ -42,6 +55,7 @@ public class EventLog {
 
 	public EventLogRelation getRelation(){
         EventLogRelation relation = new EventLogRelation();
+//        relation.setCausalDependencies(this.getCausalDependencies());
         relation.setDependency(this.calDependency());
         relation.setParallelism(this.calParallelism());
         return relation;
@@ -66,11 +80,19 @@ public class EventLog {
                     Log.warn("This "+line+" is invalid");
                     continue;
                 }
-                if (!nameIdMap.keySet().contains(tasks[0])){
-                    nameIdMap.put(tasks[0], tasklist.size());
-                    tasklist.add(tasks[0]);
+                
+                if (!nameIdMap.keySet().contains(tasks[LamdaDefine.FIRSTTASKINDEX])){
+                    nameIdMap.put(tasks[LamdaDefine.FIRSTTASKINDEX], tasklist.size());
+                    tasklist.add(tasks[LamdaDefine.FIRSTTASKINDEX]);
                 }
-                String[] postTasks = tasks[1].split(",");
+                
+                int caseId = Integer.parseInt(tasks[LamdaDefine.IDINDEX]);
+                if (!this.eventlist.containsKey(caseId)){
+                	eventlist.put(caseId, new ArrayList<Integer>());
+                }
+                eventlist.get(caseId).add(tasklist.size()-1);
+                
+                String[] postTasks = tasks[LamdaDefine.POSTTASKINDEX].split(",");
                 HashSet<Integer> postTaskSet = new HashSet<Integer>();
                 for(int i = 0; i < postTasks.length; i++){
                     if (!nameIdMap.keySet().contains(postTasks[i])){
@@ -79,8 +101,9 @@ public class EventLog {
                     }
                     postTaskSet.add(nameIdMap.get(postTasks[i]));
                 }
-                postTaskMap.put(nameIdMap.get(tasks[0]), postTaskSet);
+                postTaskMap.put(nameIdMap.get(tasks[LamdaDefine.FIRSTTASKINDEX]), postTaskSet);
             }
+            this.taskNum = tasklist.size();
             Log.debug("Load log successful!\nnameIdMap is :"+nameIdMap.toString()+"\npostTaskMap is :"+postTaskMap.toString());
             br.close();
         } catch (IOException e) {
@@ -135,7 +158,6 @@ public class EventLog {
     
     private int[][] calDependency(){
         int[][] dependency = new int[LamdaDefine.MAXTASKNUM][LamdaDefine.MAXTASKNUM];
-        int taskNum = tasklist.size();
         for(int i = 0; i < taskNum; i++){
             for(int j = 0; j < taskNum; j++){
                 if (postTaskMap.get(i).contains(j)){
@@ -148,8 +170,30 @@ public class EventLog {
     
     private int[][] calParallelism(){
         int[][] parallelism = new int[LamdaDefine.MAXTASKNUM][LamdaDefine.MAXTASKNUM];
-        int taskNum = tasklist.size();
         
         return parallelism;
     }
+    
+	public Map<Integer, ArrayList<Integer>> getEventlist() {
+		return eventlist;
+	}
+
+
+	public void setEventlist(Map<Integer, ArrayList<Integer>> eventlist) {
+		this.eventlist = eventlist;
+	}
+    
+//    public Set<EventPair<Integer, Integer>> getCausalDependencies() {
+//    	for(int i = 0; i < this.taskNum; ++i){
+//    		for(int j = 0; j < this.taskNum; ++j){
+//    			if ()
+//    		}
+//    	}
+//		return causalDependencies;
+//	}
+//
+//
+//	public void setCausalDependencies(Set<EventPair<Integer, Integer>> causalDependencies) {
+//		this.causalDependencies = causalDependencies;
+//	}
 }
