@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ExecutionException;
 
@@ -127,12 +128,42 @@ public class LamdaMiner implements NodeExpander<Tuple>{
 			context.getFutureResult(0).cancel(true);
 			return null;
 		}
-//		//find the implict dependency
-//		Iterator<Tuple> iter = result.iterator();
-//		while(iter.hasNext()){
-//			Tuple tupe = iter.next();
-//			
-//		}
+		
+		//find the implict dependency
+		Stack<Tuple> resultBak = new Stack<Tuple>();
+		resultBak.addAll(result);
+		for(Tuple tuple : resultBak){
+			Set<Integer> left = tuple.leftPart;
+			Set<Integer> implictSet = new HashSet<Integer>();
+			Set<Integer> explictSet = new HashSet<Integer>();
+			Set<Integer> right = tuple.rightPart;
+			Set<Integer> rightImplictSet = new HashSet<Integer>();
+			for(Integer i: left){
+				for(Integer j: right)
+				{
+					if (hasImplictDepRetaion(i, j)){
+						implictSet.add(i);
+						rightImplictSet.add(j);
+					}
+				}
+			}
+			for(Integer i: left){
+				if (!implictSet.contains(i)){
+					explictSet.add(i);
+				}
+			}
+			if (!explictSet.isEmpty() && !implictSet.isEmpty() && (rightImplictSet == right)){
+				result.remove(tuple);
+				Tuple newTuple = new Tuple();
+				newTuple.leftPart = implictSet;
+				newTuple.rightPart = right;
+				result.add(newTuple);
+				Tuple new2Tuple = newTuple.clone();
+				newTuple.leftPart = explictSet;
+				result.add(new2Tuple);
+			}
+			
+		}
 		// Add transitions 
 		Map<Integer, Transition> class2transition = new HashMap<Integer, Transition>();
 		Petrinet net = PetrinetFactory.newPetrinet("Petrinet from Eventlog, mined with LamdaMiner");
@@ -332,6 +363,13 @@ public class LamdaMiner implements NodeExpander<Tuple>{
 		}
 		return false;
 
+	}
+	
+	private boolean hasImplictDepRetaion(int from, int to){
+		if(relation.getCausalDependencies().get(new EventPair<Integer, Integer>(from, to)) == 1){
+			return true;
+		}
+		return false;
 	}
 
 	private boolean hasCausalRelation(int from, int to) {
